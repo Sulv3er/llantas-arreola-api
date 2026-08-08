@@ -1,0 +1,22 @@
+{
+  "name": "arreola_api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.0.2",
+    "mysql2": "^3.17.3",
+    "nodemailer": "^9.0.5",
+    "resend": "^6.18.1",
+    "stripe": "^22.4.0",
+    "xlsx": "^0.18.5"
+  }
+}
