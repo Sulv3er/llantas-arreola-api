@@ -36,15 +36,13 @@ const db = mysql.createPool({
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.hostinger.com', 
-    port: 2525,
-    secure: false,
+    host: 'smtp.gmail.com', 
+    port: 465,
+    secure: true,
     auth: {
-        user: 'Aqui va un correo', 
-        pass: 'Aqui va un password'             
-    },
-    tls: { rejectUnauthorized: false },
-    family: 4 
+        user: 'soporte.llantasyrines@gmail.com', 
+        pass: 'AQUI_TU_CONTRASEÑA_DE_APLICACION_DE_16_LETRAS'             
+    }
 });
 
 db.getConnection((err, connection) => {
@@ -74,10 +72,6 @@ function getRowValue(row, keywords) {
     }
     return null;
 }
-
-// ============================================================================
-// --- RUTAS DE RESPUESTA ULTRALIGERAS PARA CERRAR LA PESTAÑA ---
-// ============================================================================
 
 app.get('/payment-success', (req, res) => {
     res.send(`
@@ -143,9 +137,6 @@ app.get('/payment-cancel', (req, res) => {
     `);
 });
 
-// ============================================================================
-
-// --- RUTA: CREAR SESIÓN STRIPE ---
 app.post('/create-checkout-session', async (req, res) => {
     try {
         const { productName, total, userEmail, quantity } = req.body;
@@ -162,7 +153,6 @@ app.post('/create-checkout-session', async (req, res) => {
                 quantity: quantity || 1,
             }],
             mode: 'payment',
-            // MAGIA: Ahora redirigimos a las rutas ultraligeras del servidor
             success_url: 'https://llantas-arreola-api.onrender.com/payment-success', 
             cancel_url: 'https://llantas-arreola-api.onrender.com/payment-cancel', 
             customer_email: userEmail || undefined,
@@ -175,7 +165,6 @@ app.post('/create-checkout-session', async (req, res) => {
     }
 });
 
-// --- RUTA: VERIFICAR PAGO ---
 app.post('/verify-stripe-payment', async (req, res) => {
     try {
         const { sessionId } = req.body;
@@ -214,7 +203,7 @@ app.post('/register', (req, res) => {
         [name, email, password, phone || '', 'cliente', otp, 0], (err) => {
             if (err) return res.status(500).json({ success: false, error: err.message });
             const mailOptions = {
-                from: '"Llantas Arreola" <gagj020901@itsuruapan.edu.mx>',
+                from: '"Soporte Llantas Arreola" <soporte.llantasyrines@gmail.com>',
                 to: email,
                 subject: 'Código de Verificación - Llantas Arreola',
                 html: `<div style="text-align: center;"><h2 style="color: #A31D1D;">¡Bienvenido, ${name}!</h2><p>Tu código es:</p><h2>${otp}</h2></div>`
@@ -246,7 +235,6 @@ app.post('/updateProfile', (req, res) => {
     });
 });
 
-// --- RUTA: GUARDAR ORDEN EN MYSQL Y DESCONTAR STOCK ---
 app.post('/saveOrder', (req, res) => {
     const { id, user_email, product_name, product_specs, quantity, date, total, image, invoice_url, buyer_name, buyer_phone } = req.body;
     const productId = id.includes('_') ? id.substring(id.indexOf('_') + 1) : id;
