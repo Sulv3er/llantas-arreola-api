@@ -5,7 +5,6 @@ const multer = require('multer');
 const path = require('path');
 const xlsx = require('xlsx');
 const fs = require('fs');
-const nodemailer = require('nodemailer'); 
 const Stripe = require('stripe'); 
 
 if (!fs.existsSync('uploads')) {
@@ -34,16 +33,6 @@ const db = mysql.createPool({
 });
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com', 
-    port: 465,
-    secure: true,
-    auth: {
-        user: 'soporte.llantasyrines@gmail.com', 
-        pass: 'llantas_0130_rines'             
-    }
-});
 
 db.getConnection((err, connection) => {
     if (err) console.error('❌ Error conectando a MySQL:', err);
@@ -97,7 +86,6 @@ app.get('/payment-success', (req, res) => {
                 <p><b>Ya puedes cerrar esta pestaña</b> y regresar a la tienda.</p>
             </div>
             <script>
-                // Intenta cerrar la pestaña automáticamente después de 2.5 segundos
                 setTimeout(() => { window.close(); }, 2500);
             </script>
         </body>
@@ -129,7 +117,6 @@ app.get('/payment-cancel', (req, res) => {
                 <p><b>Ya puedes cerrar esta pestaña</b> y regresar a la tienda.</p>
             </div>
             <script>
-                // Intenta cerrar la pestaña automáticamente después de 2.5 segundos
                 setTimeout(() => { window.close(); }, 2500);
             </script>
         </body>
@@ -196,21 +183,35 @@ app.post('/login', (req, res) => {
 app.post('/register', (req, res) => {
     const { name, email, password, phone } = req.body;
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
+    
     db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
         if (err) return res.status(500).json({ success: false, error: err.message });
         if (results.length > 0) return res.json({ success: false, message: 'El correo ya está registrado.' });
+        
         db.query('INSERT INTO users (name, email, password, phone, rol, codigo_verificacion, verificado) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-        [name, email, password, phone || '', 'cliente', otp, 0], (err) => {
+        [name, email, password, phone || '', 'cliente', otp, 0], async (err) => {
             if (err) return res.status(500).json({ success: false, error: err.message });
-            const mailOptions = {
-                from: '"Soporte Llantas Arreola" <soporte.llantasyrines@gmail.com>',
-                to: email,
-                subject: 'Código de Verificación - Llantas Arreola',
-                html: `<div style="text-align: center;"><h2 style="color: #A31D1D;">¡Bienvenido, ${name}!</h2><p>Tu código es:</p><h2>${otp}</h2></div>`
-            };
-            transporter.sendMail(mailOptions, () => {
+            
+            try {
+                await fetch('https://api.brevo.com/v3/smtp/email', {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json',
+                        'api-key': process.env.BREVO_API_KEY,
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sender: { name: "Soporte Llantas Arreola", email: "soporte.llantasyrines@gmail.com" },
+                        to: [{ email: email, name: name }],
+                        subject: 'Código de Verificación - Llantas Arreola',
+                        htmlContent: `<div style="text-align: center; font-family: Arial, sans-serif;"><h2 style="color: #D32F2F;">¡Bienvenido al Club, ${name}!</h2><p>Para activar tu cuenta y poder comprar, ingresa el siguiente código de seguridad en la aplicación:</p><h1 style="font-size: 32px; letter-spacing: 5px; background: #f4f4f4; padding: 15px; border-radius: 8px; display: inline-block;">${otp}</h1><p style="color: #666; font-size: 12px; margin-top: 30px;">Si no solicitaste este registro, ignora este mensaje.</p></div>`
+                    })
+                });
                 res.json({ success: true, message: 'Usuario registrado.' });
-            });
+            } catch (apiError) {
+                console.error("Error enviando correo con la API:", apiError);
+                res.json({ success: true, message: 'Usuario registrado.' });
+            }
         });
     });
 });
