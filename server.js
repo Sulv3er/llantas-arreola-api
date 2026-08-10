@@ -41,7 +41,7 @@ const transporter = nodemailer.createTransport({
     secure: true,
     auth: {
         user: 'soporte.llantasyrines@gmail.com', 
-        pass: 'AQUI_TU_CONTRASEÑA_DE_APLICACION_DE_16_LETRAS'             
+        pass: 'llantas_0130_rines'             
     }
 });
 
