@@ -181,15 +181,15 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, address } = req.body;
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
     
     db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
         if (err) return res.status(500).json({ success: false, error: err.message });
         if (results.length > 0) return res.json({ success: false, message: 'El correo ya está registrado.' });
         
-        db.query('INSERT INTO users (name, email, password, phone, rol, codigo_verificacion, verificado) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-        [name, email, password, phone || '', 'cliente', otp, 0], async (err) => {
+        db.query('INSERT INTO users (name, email, password, phone, address, rol, codigo_verificacion, verificado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+        [name, email, password, phone || '', address || 'Sin dirección', 'cliente', otp, 0], async (err) => {
             if (err) return res.status(500).json({ success: false, error: err.message });
             
             try {
