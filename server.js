@@ -349,6 +349,15 @@ app.post('/admin/updateUserRole', (req, res) => {
     });
 });
 
+// NUEVA RUTA: Eliminar usuario por correo electrónico
+app.post('/admin/deleteUser', (req, res) => {
+    const { email } = req.body;
+    db.query('DELETE FROM users WHERE email = ?', [email], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err.message });
+        res.json({ success: true, message: 'Usuario eliminado' });
+    });
+});
+
 app.get('/admin/orders', (req, res) => {
     db.query('SELECT * FROM orders ORDER BY order_date DESC', (err, results) => {
         if (err) return res.status(500).json({ success: false, error: err.message });
